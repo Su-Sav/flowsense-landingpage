@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlowSense - Intelligent Error Orchestration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #059669;
+            --accent: #f59e0b;
+            --danger: #dc2626;
+            --bg-dark: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f23 100%);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 2rem;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(79, 70, 229, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(5, 150, 105, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.5rem);
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Comparison Diagram in Hero */
+        .comparison-diagram {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 3rem;
+            margin: 4rem 0;
+            align-items: center;
+        }
+
+        .comparison-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            backdrop-filter: blur(10px);
+            position: relative;
+            transition: all 0.4s ease;
+        }
+
+        .comparison-box:hover {
+            transform: translateY(-8px);
+            border-color: rgba(79, 70, 229, 0.5);
+        }
+
+        .comparison-box.before {
+            border-color: rgba(220, 38, 38, 0.3);
+        }
+
+        .comparison-box.after {
+            border-color: rgba(5, 150, 105, 0.3);
+        }
+
+        .comparison-label {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .comparison-label.before {
+            background: rgba(220, 38, 38, 0.2);
+            color: #fca5a5;
+        }
+
+        .comparison-label.after {
+            background: rgba(5, 150, 105, 0.2);
+            color: #6ee7b7;
+        }
+
+        .flow-step {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 3px solid;
+        }
+
+        .flow-step.before {
+            border-color: #dc2626;
+        }
+
+        .flow-step.after {
+            border-color: #059669;
+        }
+
+        .flow-step-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .flow-step-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .arrow-between {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: var(--primary);
+            padding: 0 2rem;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 6rem;
+        }
+
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Executive Summary */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(79, 70, 229, 0.2);
+        }
+
+        .summary-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .summary-card:nth-child(1) .summary-icon {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        }
+
+        .summary-card:nth-child(2) .summary-icon {
+            background: linear-gradient(135deg, #059669, #0891b2);
+        }
+
+        .summary-card:nth-child(3) .summary-icon {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .summary-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* How it Works Diagram */
+        .how-it-works {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 3rem 0;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+
+        .flow-box {
+            flex: 1;
+            min-width: 150px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid;
+            border-radius: 12px;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .flow-box:hover {
+            transform: scale(1.05);
+        }
+
+        .flow-box.input {
+            border-color: #64748b;
+        }
+
+        .flow-box.process {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(124, 58, 237, 0.1));
+        }
+
+        .flow-box.output {
+            border-color: var(--secondary);
+        }
+
+        .flow-box.output.park {
+            border-color: var(--accent);
+        }
+
+        .flow-box.output.manual {
+            border-color: var(--danger);
+        }
+
+        .flow-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .flow-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .flow-desc {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--primary);
+        }
+
+        /* Architecture Cards */
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .arch-card {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.05), rgba(124, 58, 237, 0.05));
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .arch-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .arch-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .arch-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .arch-card p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        .arch-features {
+            list-style: none;
+        }
+
+        .arch-features li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .arch-features li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        /* Results Section */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .result-number {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-label {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .result-context {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.1), rgba(5, 150, 105, 0.1));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4rem 2rem;
+            text-align: center;
+            margin: 4rem 0;
+        }
+
+        .cta-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta-section p {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-block;
+            border: 2px solid;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border-color: var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .comparison-diagram {
+                grid-template-columns: 1fr;
+            }
+
+            .arrow-between {
+                transform: rotate(90deg);
+                padding: 1rem 0;
+            }
+
+            .flow-diagram {
+                flex-direction: column;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero-content {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .summary-card, .arch-card, .result-card {
+            animation: fadeInUp 0.8s ease-out;
+            animation-fill-mode: both;
+        }
+
+        .summary-card:nth-child(1) { animation-delay: 0.1s; }
+        .summary-card:nth-child(2) { animation-delay: 0.2s; }
+        .summary-card:nth-child(3) { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Intelligente Fehlerbehandlung für SAP CPI</h1>
+            <p class="hero-subtitle">Von HTTP 500 zu smarter Geschäftsentscheidung in Sekunden</p>
+            
+            <!-- Before/After Comparison -->
+            <div class="comparison-diagram">
+                <div class="comparison-box before">
+                    <div class="comparison-label before">Vorher</div>
+                    <div class="flow-step before">
+                        <div class="flow-step-title">HTTP 500</div>
+                    </div>
+                    <div style="text-align: center; font-size: 1.5rem; margin: 1rem 0;">↓</div>
+                    <div class="flow-step before">
+                        <div class="flow-step-title">Manuelle Analyse</div>
+                        <div class="flow-step-desc">Support durchsucht Logs</div>
+                    </div>
+                    <div style="text-align: center; font-size: 1.5rem; margin: 1rem 0;">↓</div>
+                    <div class="flow-step before">
+                        <div class="flow-step-title">4-8 Stunden</div>
+                        <div class="flow-step-desc">Zeitaufwendig & inkonsistent</div>
+                    </div>
+                </div>
+
+                <div class="arrow-between">→</div>
+
+                <div class="comparison-box after">
+                    <div class="comparison-label after">Nachher</div>
+                    <div class="flow-step after">
+                        <div class="flow-step-title">HTTP 500</div>
+                    </div>
+                    <div style="text-align: center; font-size: 1.5rem; margin: 1rem 0;">↓</div>
+                    <div class="flow-step after">
+                        <div class="flow-step-title">FlowSense</div>
+                        <div class="flow-step-desc">Automatische Klassifikation</div>
+                    </div>
+                    <div style="text-align: center; font-size: 1.5rem; margin: 1rem 0;">↓</div>
+                    <div class="flow-step after">
+                        <div class="flow-step-title">Minuten</div>
+                        <div class="flow-step-desc">Intelligent & auditierbar</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Executive Summary -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">Das Problem</h2>
+            <p class="section-subtitle">In modernen Integrationslandschaften entstehen täglich tausende Fehler. Klassisches Monitoring liefert nur technische Codes, aber keinen Kontext.</p>
+            
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <div class="summary-icon">🔍</div>
+                    <h3>Fehlender Kontext</h3>
+                    <p>Ein HTTP 500 kann ein Timeout, abgelaufenes Token oder fachlicher Konflikt sein – Support muss manuell analysieren.</p>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">⏱️</div>
+                    <h3>Zeitverschwendung</h3>
+                    <p>Support-Teams durchsuchen Logs und stellen Rückfragen – zeitaufwendig, teuer und inkonsistent.</p>
+                </div>
+                <div class="summary-card">
+                    <div class="summary-icon">⚠️</div>
+                    <h3>Prozessunterbrechung</h3>
+                    <p>Geschäftsprozesse bleiben stehen, während auf manuelle Entscheidungen gewartet wird.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- How it Works -->
+        <section class="section">
+            <h2 class="section-title">Wie FlowSense funktioniert</h2>
+            <p class="section-subtitle">Intelligente Fehlerklassifikation und automatisierte Entscheidungsfindung</p>
+            
+            <div class="how-it-works">
+                <div class="flow-diagram">
+                    <div class="flow-box input">
+                        <div class="flow-icon">⚠️</div>
+                        <div class="flow-label">Fehler</div>
+                        <div class="flow-desc">HTTP 500, 502, 400...</div>
+                    </div>
+
+                    <div class="flow-arrow">→</div>
+
+                    <div class="flow-box process">
+                        <div class="flow-icon">🧠</div>
+                        <div class="flow-label">FlowSense</div>
+                        <div class="flow-desc">Analysiert & entscheidet</div>
+                    </div>
+
+                    <div class="flow-arrow">→</div>
+
+                    <div class="flow-box output">
+                        <div class="flow-icon">⟳</div>
+                        <div class="flow-label">Retry</div>
+                        <div class="flow-desc">Temporäre Fehler</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1.5rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
+                    <div class="flow-box output park" style="flex: 0 1 200px;">
+                        <div class="flow-icon">📋</div>
+                        <div class="flow-label">Park</div>
+                        <div class="flow-desc">Fachliche Fehler</div>
+                    </div>
+
+                    <div class="flow-box output manual" style="flex: 0 1 200px;">
+                        <div class="flow-icon">🔔</div>
+                        <div class="flow-label">Ticket</div>
+                        <div class="flow-desc">Kritische Fehler</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; padding: 1.5rem; background: rgba(79, 70, 229, 0.1); border-radius: 12px; border-left: 4px solid var(--primary);">
+                    <strong>Der Unterschied:</strong> Statt "HTTP 500 → Support-Ticket" erkennt FlowSense automatisch: "Connectivity Issue zum PricingService → Retry in 120 Sekunden empfohlen" – und setzt es direkt um.
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="section">
+            <h2 class="section-title">Modulare Architektur</h2>
+            <p class="section-subtitle">Drei Komponenten, die nahtlos zusammenarbeiten</p>
+            
+            <div class="architecture-grid">
+                <div class="arch-card">
+                    <h3>FlowSense API</h3>
+                    <p>Cloud-nativer Service für semantische Fehlerklassifikation</p>
+                    <ul class="arch-features">
+                        <li>LLM-gestützte Analyse (OpenAI)</li>
+                        <li>Schema-validierte JSON-Responses</li>
+                        <li>OAuth2 Security (SAP XSUAA)</li>
+                        <li>Circuit Breaker & Rate Limiting</li>
+                        <li>Universell einsetzbar</li>
+                    </ul>
+                </div>
+
+                <div class="arch-card">
+                    <h3>CPI Orchestrator</h3>
+                    <p>Integration in SAP CPI Exception Handling</p>
+                    <ul class="arch-features">
+                        <li>Context Extraction aus CPI</li>
+                        <li>4-Wege Decision Routing</li>
+                        <li>DataStore Management</li>
+                        <li>Audit Trail Integration</li>
+                        <li>ProcessDirect Pattern</li>
+                    </ul>
+                </div>
+
+                <div class="arch-card">
+                    <h3>Governance Toolkit</h3>
+                    <p>Automatisierte Retry & Cleanup Prozesse</p>
+                    <ul class="arch-features">
+                        <li>RetryFetch Timer Flow</li>
+                        <li>Adaptive Backoff Logic</li>
+                        <li>DataStore Lifecycle Management</li>
+                        <li>Retention Policy Engine</li>
+                        <li>Compliance-Ready</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results -->
+        <section class="section">
+            <h2 class="section-title">Proof of Concept Ergebnisse</h2>
+            <p class="section-subtitle">Abgeleitete Wirkung aus CPI-Testdaten</p>
+            
+            <div class="results-grid">
+                <div class="result-card">
+                    <div class="result-number">60%</div>
+                    <div class="result-label">weniger manuelle Tickets</div>
+                    <div class="result-context">Potenzial für Support-Entlastung</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-number">45%</div>
+                    <div class="result-label">MTTR-Reduktion</div>
+                    <div class="result-context">Von Stunden auf Minuten</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-number">100%</div>
+                    <div class="result-label">Auditierbarkeit</div>
+                    <div class="result-context">Revisionssichere Dokumentation</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-number">78%</div>
+                    <div class="result-label">Retry Success Rate</div>
+                    <div class="result-context">Automatische Fehlerbehandlung</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="cta-section">
+            <h2>Interessiert an intelligenter Fehlerbehandlung?</h2>
+            <p>FlowSense ist ein Proof of Concept, der zeigt, wie KI-gestützte Prozessoptimierung in SAP-Landschaften funktioniert.</p>
+            <div class="cta-buttons">
+                <a href="https://github.com/Su-Sav/flowsense-api" class="btn btn-primary" target="_blank">GitHub Repository</a>
+                <a href="https://www.linkedin.com/in/suna-savran/" class="btn btn-secondary" target="_blank">LinkedIn</a>
+                <a href="mailto:suna_savran@icloud.com" class="btn btn-secondary">Kontakt aufnehmen</a>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="https://github.com/Su-Sav" target="_blank">GitHub</a>
+            <a href="https://www.linkedin.com/in/suna-savran/" target="_blank">LinkedIn</a>
+            <a href="mailto:suna_savran@icloud.com">E-Mail</a>
+        </div>
+        <p>Portfolio · Stand: September 2025</p>
+        <p style="margin-top: 0.5rem; font-size: 0.9rem;">SAP Certified Associate – Business Process Integration with SAP S/4HANA</p>
+    </footer>
+</body>
+</html>
